@@ -18,12 +18,18 @@
 #include "../generator/secp256k1_helper.h"
 #include "../contracts.h"
 
+/** 
+ * Get evmc_address of the pre-compiled contract
+ * @param n contract address index
+ * @see match_precompiled_address in contracts.h
+ */
 evmc_address build_pre_compiled_contract_address(uint8_t n) {
   evmc_address addr{0};
   addr.bytes[19] = n;
   return addr;
 }
 
+/** converting hex to binary */
 void hex2bin(const char *hex, uint8_t **out, size_t *out_len) {
   size_t hex_length = strlen(hex);
   *out_len = hex_length / 2;
@@ -39,6 +45,13 @@ void hex2bin(const char *hex, uint8_t **out, size_t *out_len) {
   }
 }
 
+/**
+ * 
+ * @param n contract address index
+ * @param input_hex
+ * @param expected_output_hex
+ * @param expected_gas @see precompiled_contract_gas_fn
+ */
 int test_contract(const uint8_t n,
                   const char *input_hex,
                   const char *expected_output_hex,

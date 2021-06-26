@@ -11,6 +11,13 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+lazy_static = "1.4"
+# TODO: check ckb-vm version
+ckb-vm = { git = "https://github.com/nervosnetwork/ckb-vm.git", tag = "0.19.1", features = ["detect-asm"] }
+# TODO: change registry
+gw-common = { path = "../../integration-test/godwoken/crates/common" }
+gw-types = { path = "../../integration-test/godwoken/crates/types" }
+gw-generator = { path = "../../integration-test/godwoken/crates/generator" }
 
 # [dependencies.polyjuice-tests]
 # path = ".."
@@ -22,5 +29,11 @@ members = ["."]
 [[bin]]
 name = "simple_fuzz"
 path = "fuzz_targets/simple_fuzz.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "simple_target_on_vm"
+path = "fuzz_targets/simple_target_on_vm.rs"
 test = false
 doc = false
