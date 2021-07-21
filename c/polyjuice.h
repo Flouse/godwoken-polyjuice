@@ -47,7 +47,8 @@ int printf(const char *format, ...) {
   ((kind) == EVMC_CALLCODE || (kind) == EVMC_DELEGATECALL)
 
 /* Max data buffer size: 24KB */
-#define MAX_DATA_SIZE 24576
+// TODO: benchmark when MAX_DATA_SIZE = 8KB
+#define MAX_DATA_SIZE 8192
 #define POLYJUICE_SYSTEM_PREFIX 0xFF
 #define POLYJUICE_CONTRACT_CODE 0x01
 #define POLYJUICE_DESTRUCTED 0x02
@@ -563,7 +564,7 @@ struct evmc_result call(struct evmc_host_context* context,
 
   precompiled_contract_gas_fn contract_gas;
   precompiled_contract_fn contract;
-  if (msg->depth >= 32) {
+  if (msg->depth >= 1024) {
     ckb_debug("call depth exceeded");
     res.status_code = EVMC_CALL_DEPTH_EXCEEDED;
     context->error_code = FATAL_CALL_DEPTH_EXCEEDED;

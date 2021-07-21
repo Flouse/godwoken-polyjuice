@@ -42,15 +42,47 @@ fn test_recursion_contract_call() {
         block_producer_id,
         block_number,
     );
-    block_number += 1;
     let recur_account_script = new_account_script(&mut state, creator_account_id, from_id, false);
     let recur_account_id = state
         .get_account_id_by_script_hash(&recur_account_script.hash().into())
         .unwrap()
         .unwrap();
 
-    {
-        // Call Sum(31), 31 < max_depth=32
+    {// Call Sum(64+)
+        let block_info = new_block_info(0, block_number, block_number);
+        let input =
+            hex::decode("188b85b40000000000000000000000000000000000000000000000000000000000000040").unwrap();
+        let args = PolyjuiceArgsBuilder::default()
+            .gas_limit(200000)
+            .gas_price(1)
+            .value(0)
+            .input(&input)
+            .build();
+        let raw_tx = RawL2Transaction::new_builder()
+            .from_id(from_id.pack())
+            .to_id(recur_account_id.pack())
+            .args(Bytes::from(args).pack())
+            .build();
+        let db = store.begin_transaction();
+        let tip_block_hash = store.get_tip_block_hash().unwrap();
+        let run_result = generator
+            .execute_transaction(
+                &ChainView::new(&db, tip_block_hash),
+                &state,
+                &block_info,
+                &raw_tx,
+            )
+            .expect("recursive call depth to 64");
+        state.apply_run_result(&run_result).expect("update state");
+        println!(
+            "\t call result {:?}", run_result.return_data
+        );
+        let expected_sum = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 42];
+        assert_eq!(run_result.return_data, expected_sum);
+    }
+
+    {// Call Sum(31), 31 < max_depth=32
+        block_number += 1;
         let block_info = new_block_info(0, block_number, block_number);
         let input =
             hex::decode("188b85b4000000000000000000000000000000000000000000000000000000000000001f")

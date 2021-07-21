@@ -27,4 +27,5 @@ make all-via-docker
 
 cd $TESTS_DIR
 export RUST_BACKTRACE=full
-cargo test -- --nocapture
+# cargo test -- --nocapture
+RUST_LOG=gw=debug cargo test -- ecrecover recursio --nocapture 2>&1 | grep depth -C 6
