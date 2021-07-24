@@ -453,7 +453,7 @@ int init() {
   // FIXME:
   gw_update_raw(poly_destructed_key, zero_nonce);
 
-  print_state();
+  // print_state();
 
   return 0;
 }
