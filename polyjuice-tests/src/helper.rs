@@ -43,8 +43,8 @@ pub const SUDT_VALIDATOR_SCRIPT_TYPE_HASH: [u8; 32] = [0xa2u8; 32];
 pub const SECP_DATA: &[u8] = include_bytes!("../../build/secp256k1_data");
 // polyjuice
 pub const BIN_DIR: &str = "../build";
-pub const GENERATOR_NAME: &str = "generator";
-pub const VALIDATOR_NAME: &str = "validator";
+pub const GENERATOR_NAME: &str = "generator_log";
+pub const VALIDATOR_NAME: &str = "validator_log";
 
 pub const ROLLUP_SCRIPT_HASH: [u8; 32] = [0xa9u8; 32];
 pub const ETH_ACCOUNT_LOCK_CODE_HASH: [u8; 32] = [0xaau8; 32];
@@ -359,7 +359,12 @@ impl PolyjuiceArgsBuilder {
 }
 
 pub fn setup() -> (Store, DummyState, Generator, u32) {
-    let _ = env_logger::try_init();
+    // If you want to watch the [contract debug] logs in Polyjuice,
+    // please change the log level from `info` to `debug`.
+    // then run `cargo test -- [test_filter] --nocapture`, 
+    // or run `RUST_LOG=debug cargo test -- [test_filter] --nocapture` directly
+    let _ = env_logger::try_init_from_env(env_logger::Env::default().default_filter_or("info"));
+
     let store = Store::open_tmp().unwrap();
     let mut state = DummyState::default();
     let reserved_id = state
