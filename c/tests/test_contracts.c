@@ -68,6 +68,8 @@ int test_contract(const uint8_t n,
   ctx.sys_load_data = sys_load_data;
   ctx.sys_load = sys_load;
   ctx._internal_load_raw = _internal_load_raw;
+
+  ckb_debug("before run contract");
   ret = contract(&ctx, NULL, 0, true, input_src, input_size, &output, &output_size);
   if (ret != 0) {
     debug_print_int("run contract failed", ret);
@@ -654,29 +656,29 @@ int main() {
   memset(g_rollup_script_hash, 0, 32);
   memset(g_script_code_hash, 0, 32);
 
-  if (test_ecrecover() != 0) {
-    return -1;
-  }
-  if (test_sha256hash() != 0) {
-    return -2;
-  }
-  if (test_ripemd160hash() != 0) {
-    return -3;
-  }
-  if (test_data_copy() != 0) {
-    return -4;
-  }
-  if (test_big_mod_exp() != 0) {
-    return -5;
-  }
+  // if (test_ecrecover() != 0) {
+  //   return -1;
+  // }
+  // if (test_sha256hash() != 0) {
+  //   return -2;
+  // }
+  // if (test_ripemd160hash() != 0) {
+  //   return -3;
+  // }
+  // if (test_data_copy() != 0) {
+  //   return -4;
+  // }
+  // if (test_big_mod_exp() != 0) {
+  //   return -5;
+  // }
   if (test_bn256_add_istanbul() != 0) {
     return -6;
   }
   if (test_bn256_scalar_mul_istanbul() != 0) {
     return -7;
   }
-  if (test_blake2f() != 0) {
-    return -9;
-  }
+  // if (test_blake2f() != 0) {
+  //   return -9;
+  // }
   return 0;
 }

@@ -30,7 +30,8 @@ PROTOCOL_SCHEMA_URL := https://raw.githubusercontent.com/nervosnetwork/godwoken/
 
 ALL_OBJS := build/execution_state.o build/baseline.o build/analysis.o build/instruction_metrics.o build/instruction_names.o build/execution.o build/instructions.o build/instructions_calls.o build/evmone.o \
   build/keccak.o build/keccakf800.o \
-  build/sha256.o build/memzero.o build/ripemd160.o build/bignum.o build/platform_util.o
+  build/sha256.o build/memzero.o build/ripemd160.o build/bignum.o build/platform_util.o \
+  deps/bn/alt_bn128_staticlib/target/riscv64imac-unknown-none-elf/release/libalt_bn128.a
 BIN_DEPS := c/contracts.h c/sudt_contracts.h c/other_contracts.h c/polyjuice.h c/polyjuice_utils.h build/secp256k1_data_info.h $(ALL_OBJS)
 GENERATOR_DEPS := c/generator/secp256k1_helper.h $(BIN_DEPS)
 VALIDATOR_DEPS := c/validator/secp256k1_helper.h $(BIN_DEPS)
@@ -42,12 +43,18 @@ BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:7b168b4b109a0f741078a71b
 
 all: build/test_contracts build/test_rlp build/generator build/validator build/generator_log build/validator_log build/test_ripemd160 build/blockchain.h build/godwoken.h
 
-all-via-docker: generate-protocol
+all-via-docker: generate-protocol build/ckb-binary-patcher
 	mkdir -p build
-	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make"
+	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} make
+	mv build/test_contracts build/test_contracts.bak
+	./deps/ckb-binary-patcher/target/release/ckb-binary-patcher -i build/test_contracts.bak -o build/test_contracts
 log-version-via-docker: generate-protocol
 	mkdir -p build
-	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make build/generator_log && make build/validator_log"
+	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/generator_log && make build/validator_log"
+test_contracts-via-docker: generate-protocol build/ckb-binary-patcher
+	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/test_contracts ; make build/test_rlp"
+	mv build/test_contracts build/test_contracts.bak
+	./deps/ckb-binary-patcher/target/release/ckb-binary-patcher -i build/test_contracts.bak -o build/test_contracts
 
 clean-via-docker:
 	mkdir -p build
@@ -158,6 +165,9 @@ $(SECP256K1_SRC):
 generate-protocol: check-moleculec-version build/blockchain.h build/godwoken.h
 check-moleculec-version:
 	test "$$(${MOLC} --version | awk '{ print $$2 }' | tr -d ' ')" = ${MOLC_VERSION}
+
+build/ckb-binary-patcher:
+	cd deps/ckb-binary-patcher && cargo build --release
 
 build/blockchain.mol:
 	mkdir -p build

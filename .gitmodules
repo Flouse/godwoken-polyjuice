@@ -31,3 +31,6 @@
 [submodule "deps/godwoken-scripts"]
 	path = deps/godwoken-scripts
 	url = https://github.com/nervosnetwork/godwoken-scripts.git
+[submodule "deps/ckb-binary-patcher"]
+	path = deps/ckb-binary-patcher
+	url = https://github.com/nervosnetwork/ckb-binary-patcher

@@ -5,11 +5,18 @@
 #include "ripemd160.h"
 #include "sha256.h"
 #include <intx/intx.hpp>
-#include <bn128.hpp>
 
 #include "polyjuice_utils.h"
 #include "sudt_contracts.h"
 #include "other_contracts.h"
+
+/**
+ * alt_bn128_staticlib
+ * @see https://github.com/mohanson/bn/blob/d1c73cc198a14ca894a37ba99df88a9fb812a43c/alt_bn128_staticlib/src/ethereum.rs
+ */
+extern "C" uint32_t alt_bn128_add(const uint8_t *data, uint32_t data_len, uint8_t *output);
+extern "C" uint32_t alt_bn128_mul(const uint8_t *data, uint32_t data_len, uint8_t *output);
+extern "C" uint32_t alt_bn128_pairing(const uint8_t *data, uint32_t data_len, uint8_t *output);
 
 /* Protocol Params:
    [Referenced]:
@@ -744,23 +751,6 @@ int blake2f(gw_context_t* ctx,
   return 0;
 }
 
-
-int parse_curve_point(void *target, uint8_t *bytes) {
-  intx::uint256 *p = (intx::uint256 *)target;
-  p[0] = intx::be::unsafe::load<intx::uint256>(bytes);
-  p[1] = intx::be::unsafe::load<intx::uint256>(bytes + 32);
-  if (p[0] == 0 && p[1] == 0) {
-    p[2] = 0;
-  } else {
-    p[2] = 1;
-    if (!bn128::g1::is_on_curve(p)) {
-      ckb_debug("bn256: malformed point");
-      return ERROR_BN256_INVALID_POINT;
-    }
-  }
-  return 0;
-}
-
 int parse_twist_point(void *target, uint8_t *bytes) {
   /* FIXME: wait for pairing implementation ready */
   return 0;
@@ -781,36 +771,22 @@ int bn256_add_istanbul(gw_context_t* ctx,
                        const uint8_t* input_src,
                        const size_t input_size,
                        uint8_t** output, size_t* output_size) {
-  int ret;
   /* If the input is shorter than expected, it is assumed to be virtually padded
      with zeros at the end (i.e. compatible with the semantics of the
      CALLDATALOAD opcode). If the input is longer than expected, surplus bytes
      at the end are ignored. */
-  uint8_t real_input[128] = {0};
-  size_t real_size = input_size > 128 ? 128 : input_size;
-  /* point[3] = point[2]² */
-  intx::uint256 x[3];
-  intx::uint256 y[3];
-  intx::uint256 res[3];
-
-  memcpy(real_input, input_src, real_size);
-  ret = parse_curve_point((void *)x, real_input);
-  if (ret != 0) {
-    return ret;
-  }
-  ret = parse_curve_point((void *)y, real_input + 64);
-  if (ret != 0) {
-    return ret;
-  }
-  bn128::alt_bn128_add(x, y, res);
-
   *output = (uint8_t *)malloc(64);
   if (*output == NULL) {
     return FATAL_PRECOMPILED_CONTRACTS;
   }
   *output_size = 64;
-  intx::be::unsafe::store(*output, res[0]);
-  intx::be::unsafe::store(*output + 32, res[1]);
+
+  uint32_t ret = alt_bn128_add(input_src, input_size, *output);
+  if (ret != 0) {
+    return FATAL_PRECOMPILED_CONTRACTS;
+  }
+  ckb_debug("[bn256_add_istanbul] after alt_bn128_add()");
+
   return 0;
 }
 
@@ -829,27 +805,21 @@ int bn256_scalar_mul_istanbul(gw_context_t* ctx,
                               const uint8_t* input_src,
                               const size_t input_size,
                               uint8_t** output, size_t* output_size) {
-  int ret;
-  uint8_t real_input[96] = {0};
-  size_t real_size = input_size > 96 ? 96 : input_size;
-  intx::uint256 x[3];
-  intx::uint256 res[3];
-
-  memcpy(real_input, input_src, real_size);
-  ret = parse_curve_point((void *)x, real_input);
-  if (ret != 0) {
-    return ret;
-  }
-  intx::uint256 n = intx::be::unsafe::load<intx::uint256>(real_input + 64);
-  bn128::alt_bn128_mul(x, n, res);
-
   *output = (uint8_t *)malloc(64);
   if (*output == NULL) {
     return FATAL_PRECOMPILED_CONTRACTS;
   }
   *output_size = 64;
-  intx::be::unsafe::store(*output, res[0]);
-  intx::be::unsafe::store(*output + 32, res[1]);
+
+  debug_print_int("input_size", input_size);
+  // FIXME:
+  // [contract debug]: expected output 0x070a8d6a982153cae4be29d434e8faef8a47b274a053f5a4ee2a6c9c13c31e5c031b8ce914eba3a9ffb989f9cdd5b0f01943074bf4f0f315690ec3cec6981afc
+  // [contract debug]: returned output 0x0d68ca70f5e2536fb22afe88f42b79f4efdf8c2b6d2064ab43cb522a116fe36f15354954b271ee376bb5260aa24af1fb4df675df43a9544b07aff13e52f616fd
+  uint32_t ret = alt_bn128_mul(input_src, input_size, *output);
+  if (ret != 0) {
+    return FATAL_PRECOMPILED_CONTRACTS;
+  }
+
   return 0;
 }
 
@@ -874,7 +844,9 @@ int bn256_pairing_istanbul(gw_context_t* ctx,
     return ERROR_BN256_PAIRING;
   }
 
-  int ret;
+  // int ret;
+
+
   size_t length = input_size / 192;
   /* G1[] */
   intx::uint256 *cs = (intx::uint256 *)malloc(length * 4 * sizeof(intx::uint256));
@@ -886,20 +858,19 @@ int bn256_pairing_istanbul(gw_context_t* ctx,
   if (ts == NULL) {
     return FATAL_PRECOMPILED_CONTRACTS;
   }
-  for (size_t i = 0; i < input_size; i += 192) {
-    ret = parse_curve_point((void *)(cs + i / 192 * 4), (uint8_t *)input_src + i);
-    if (ret != 0) {
-      return ret;
-    }
-    ret = parse_twist_point((void *)(ts + i / 192 * 4), (uint8_t *)input_src + i + 64);
-    if (ret != 0) {
-      return ret;
-    }
-  }
+  // for (size_t i = 0; i < input_size; i += 192) {
+    // ret = parse_curve_point((void *)(cs + i / 192 * 4), (uint8_t *)input_src + i);
+    // if (ret != 0) {
+    //   return ret;
+    // }
+    // ret = parse_twist_point((void *)(ts + i / 192 * 4), (uint8_t *)input_src + i + 64);
+    // if (ret != 0) {
+    //   return ret;
+    // }
+  // }
   ckb_debug("pairing is unsupported yet due to very high cycle cost!");
   return ERROR_BN256_PAIRING;
 }
-
 
 bool match_precompiled_address(const evmc_address* destination,
                                precompiled_contract_gas_fn* contract_gas,
