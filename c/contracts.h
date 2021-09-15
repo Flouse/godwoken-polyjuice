@@ -751,11 +751,6 @@ int blake2f(gw_context_t* ctx,
   return 0;
 }
 
-int parse_twist_point(void *target, uint8_t *bytes) {
-  /* FIXME: wait for pairing implementation ready */
-  return 0;
-}
-
 /* bn256AddIstanbul */
 int bn256_add_istanbul_gas(const uint8_t* input_src,
                            const size_t input_size,
@@ -771,21 +766,19 @@ int bn256_add_istanbul(gw_context_t* ctx,
                        const uint8_t* input_src,
                        const size_t input_size,
                        uint8_t** output, size_t* output_size) {
-  /* If the input is shorter than expected, it is assumed to be virtually padded
-     with zeros at the end (i.e. compatible with the semantics of the
-     CALLDATALOAD opcode). If the input is longer than expected, surplus bytes
-     at the end are ignored. */
   *output = (uint8_t *)malloc(64);
   if (*output == NULL) {
     return FATAL_PRECOMPILED_CONTRACTS;
   }
   *output_size = 64;
 
-  uint32_t ret = alt_bn128_add(input_src, input_size, *output);
-  if (ret != 0) {
-    return FATAL_PRECOMPILED_CONTRACTS;
+  /* If the input_src is shorter than expected, it is assumed to be virtually padded
+     with zeros at the end (i.e. compatible with the semantics of the
+     CALLDATALOAD opcode). If the input_src is longer than expected, surplus bytes
+     at the end are ignored. */
+  if (alt_bn128_add(input_src, input_size, *output) != 0) {
+    return ERROR_BN256_ADD;
   }
-  ckb_debug("[bn256_add_istanbul] after alt_bn128_add()");
 
   return 0;
 }
@@ -811,13 +804,8 @@ int bn256_scalar_mul_istanbul(gw_context_t* ctx,
   }
   *output_size = 64;
 
-  debug_print_int("input_size", input_size);
-  // FIXME:
-  // [contract debug]: expected output 0x070a8d6a982153cae4be29d434e8faef8a47b274a053f5a4ee2a6c9c13c31e5c031b8ce914eba3a9ffb989f9cdd5b0f01943074bf4f0f315690ec3cec6981afc
-  // [contract debug]: returned output 0x0d68ca70f5e2536fb22afe88f42b79f4efdf8c2b6d2064ab43cb522a116fe36f15354954b271ee376bb5260aa24af1fb4df675df43a9544b07aff13e52f616fd
-  uint32_t ret = alt_bn128_mul(input_src, input_size, *output);
-  if (ret != 0) {
-    return FATAL_PRECOMPILED_CONTRACTS;
+  if (alt_bn128_mul(input_src, input_size, *output) != 0) {
+    return ERROR_BN256_SCALAR_MUL;
   }
 
   return 0;
@@ -832,7 +820,7 @@ int bn256_pairing_istanbul_gas(const uint8_t* input_src,
   return 0;
 }
 
-/* FIXME: Pairing is not supported due to it's high cycle cost. */
+/* EIP-197 */
 int bn256_pairing_istanbul(gw_context_t* ctx,
                            const uint8_t* code_data,
                            const size_t code_size,
@@ -840,36 +828,17 @@ int bn256_pairing_istanbul(gw_context_t* ctx,
                            const uint8_t* input_src,
                            const size_t input_size,
                            uint8_t** output, size_t* output_size) {
-  if (input_size % 192 > 0) {
+  *output = (uint8_t *)malloc(32);
+  if (*output == NULL) {
+    return FATAL_PRECOMPILED_CONTRACTS;
+  }
+  *output_size = 32;
+
+  if (0 != alt_bn128_pairing(input_src, input_size, *output)) {
     return ERROR_BN256_PAIRING;
   }
 
-  // int ret;
-
-
-  size_t length = input_size / 192;
-  /* G1[] */
-  intx::uint256 *cs = (intx::uint256 *)malloc(length * 4 * sizeof(intx::uint256));
-  if (cs == NULL) {
-    return FATAL_PRECOMPILED_CONTRACTS;
-  }
-  /* G2[] */
-  intx::uint256 *ts = (intx::uint256 *)malloc(length * 4 * sizeof(intx::uint256));
-  if (ts == NULL) {
-    return FATAL_PRECOMPILED_CONTRACTS;
-  }
-  // for (size_t i = 0; i < input_size; i += 192) {
-    // ret = parse_curve_point((void *)(cs + i / 192 * 4), (uint8_t *)input_src + i);
-    // if (ret != 0) {
-    //   return ret;
-    // }
-    // ret = parse_twist_point((void *)(ts + i / 192 * 4), (uint8_t *)input_src + i + 64);
-    // if (ret != 0) {
-    //   return ret;
-    // }
-  // }
-  ckb_debug("pairing is unsupported yet due to very high cycle cost!");
-  return ERROR_BN256_PAIRING;
+  return 0;
 }
 
 bool match_precompiled_address(const evmc_address* destination,

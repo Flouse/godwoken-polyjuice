@@ -43,15 +43,20 @@ BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:7b168b4b109a0f741078a71b
 
 all: build/test_contracts build/test_rlp build/generator build/validator build/generator_log build/validator_log build/test_ripemd160 build/blockchain.h build/godwoken.h
 
-all-via-docker: generate-protocol build/ckb-binary-patcher
+all-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
 	mkdir -p build
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} make
-	mv build/test_contracts build/test_contracts.bak
-	./deps/ckb-binary-patcher/target/release/ckb-binary-patcher -i build/test_contracts.bak -o build/test_contracts
-log-version-via-docker: generate-protocol
+	make patch-test_contracts
+	make patch-generator_log
+	make patch-validator_log
+	make patch-generator
+	make patch-validator
+log-version-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
 	mkdir -p build
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/generator_log && make build/validator_log"
-test_contracts-via-docker: generate-protocol build/ckb-binary-patcher
+	make patch-generator_log
+	make patch-validator_log
+test_contracts-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/test_contracts ; make build/test_rlp"
 	mv build/test_contracts build/test_contracts.bak
 	./deps/ckb-binary-patcher/target/release/ckb-binary-patcher -i build/test_contracts.bak -o build/test_contracts
