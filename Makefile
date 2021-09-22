@@ -7,7 +7,6 @@ OBJCOPY := $(TARGET)-objcopy
 
 SECP_DIR := deps/secp256k1-fix
 CFLAGS_CKB_STD = -Ideps/ckb-c-stdlib -Ideps/ckb-c-stdlib/molecule
-# CFLAGS_CBMT := -isystem deps/merkle-tree
 CFLAGS_SECP := -isystem $(SECP_DIR)/src -isystem $(SECP_DIR)
 CFLAGS_INTX := -Ideps/intx/lib/intx -Ideps/intx/include
 CFLAGS_ETHASH := -Ideps/ethash/include -Ideps/ethash/lib/ethash -Ideps/ethash/lib/keccak -Ideps/ethash/lib/support
@@ -170,6 +169,7 @@ build/platform_util.o: deps/mbedtls/library/platform_util.c
 build/bignum.o: deps/mbedtls/library/bignum.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -c -o $@ $<
 
+# Pairing cryptography library in Rust
 build/libalt_bn128.a:
 	cd deps/bn/alt_bn128_staticlib && cargo build --release --target riscv64imac-unknown-none-elf
 	cp deps/bn/alt_bn128_staticlib/target/riscv64imac-unknown-none-elf/release/libalt_bn128.a build/
