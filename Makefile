@@ -10,14 +10,13 @@ CFLAGS_CKB_STD = -Ideps/ckb-c-stdlib -Ideps/ckb-c-stdlib/molecule
 # CFLAGS_CBMT := -isystem deps/merkle-tree
 CFLAGS_SECP := -isystem $(SECP_DIR)/src -isystem $(SECP_DIR)
 CFLAGS_INTX := -Ideps/intx/lib/intx -Ideps/intx/include
-CFLAGS_BN128 := -Ideps/bn128/include
 CFLAGS_ETHASH := -Ideps/ethash/include -Ideps/ethash/lib/ethash -Ideps/ethash/lib/keccak -Ideps/ethash/lib/support
 CFLAGS_CRYPTO_ALGORITHMS := -Ideps/crypto-algorithms
 CFLAGS_MBEDTLS := -Ideps/mbedtls/include
 CFLAGS_EVMONE := -Ideps/evmone/lib/evmone -Ideps/evmone/include -Ideps/evmone/evmc/include
 CFLAGS_SMT := -Ideps/godwoken-scripts/c/deps/sparse-merkle-tree/c
 CFLAGS_GODWOKEN := -Ideps/godwoken-scripts/c
-CFLAGS := -O3 -Ic/ripemd160 $(CFLAGS_CKB_STD) $(CFLAGS_EVMONE) $(CFLAGS_INTX) $(CFLAGS_BN128) $(CFLAGS_ETHASH) $(CFLAGS_CRYPTO_ALGORITHMS) $(CFLAGS_MBEDTLS) $(CFLAGS_SMT) $(CFLAGS_GODWOKEN) $(CFLAGS_SECP) -Wall -g -fdata-sections -ffunction-sections
+CFLAGS := -O3 -Ic/ripemd160 $(CFLAGS_CKB_STD) $(CFLAGS_EVMONE) $(CFLAGS_INTX) $(CFLAGS_ETHASH) $(CFLAGS_CRYPTO_ALGORITHMS) $(CFLAGS_MBEDTLS) $(CFLAGS_SMT) $(CFLAGS_GODWOKEN) $(CFLAGS_SECP) -Wall -g -fdata-sections -ffunction-sections
 CXXFLAGS := $(CFLAGS) -std=c++1z
 LDFLAGS := -Wl,--gc-sections
 
@@ -31,7 +30,7 @@ PROTOCOL_SCHEMA_URL := https://raw.githubusercontent.com/nervosnetwork/godwoken/
 ALL_OBJS := build/execution_state.o build/baseline.o build/analysis.o build/instruction_metrics.o build/instruction_names.o build/execution.o build/instructions.o build/instructions_calls.o build/evmone.o \
   build/keccak.o build/keccakf800.o \
   build/sha256.o build/memzero.o build/ripemd160.o build/bignum.o build/platform_util.o \
-  deps/bn/alt_bn128_staticlib/target/riscv64imac-unknown-none-elf/release/libalt_bn128.a
+  build/libalt_bn128.a
 BIN_DEPS := c/contracts.h c/sudt_contracts.h c/other_contracts.h c/polyjuice.h c/polyjuice_utils.h build/secp256k1_data_info.h $(ALL_OBJS)
 GENERATOR_DEPS := c/generator/secp256k1_helper.h $(BIN_DEPS)
 VALIDATOR_DEPS := c/validator/secp256k1_helper.h $(BIN_DEPS)
@@ -41,9 +40,11 @@ VALIDATOR_DEPS := c/validator/secp256k1_helper.h $(BIN_DEPS)
 # docker pull nervos/ckb-riscv-gnu-toolchain:bionic-20190702
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:7b168b4b109a0f741078a71b7c4dddaf1d283a5244608f7851f5714fbad273ba
 
+CKB_BIN_PATCHER := deps/ckb-binary-patcher/target/release/ckb-binary-patcher
+
 all: build/test_contracts build/test_rlp build/generator build/validator build/generator_log build/validator_log build/test_ripemd160 build/blockchain.h build/godwoken.h
 
-all-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
+all-via-docker: generate-protocol build/libalt_bn128.a
 	mkdir -p build
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} make
 	make patch-test_contracts
@@ -51,21 +52,38 @@ all-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
 	make patch-validator_log
 	make patch-generator
 	make patch-validator
-log-version-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
+log-version-via-docker: generate-protocol build/libalt_bn128.a
 	mkdir -p build
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/generator_log && make build/validator_log"
 	make patch-generator_log
 	make patch-validator_log
-test_contracts-via-docker: generate-protocol build/libalt_bn128.a build/ckb-binary-patcher
+test_contracts-via-docker: generate-protocol build/libalt_bn128.a
 	docker run --rm -v `pwd`:/code -w "/code" ${BUILDER_DOCKER} bash -c "make build/test_contracts ; make build/test_rlp"
-	mv build/test_contracts build/test_contracts.bak
-	./deps/ckb-binary-patcher/target/release/ckb-binary-patcher -i build/test_contracts.bak -o build/test_contracts
+	make patch-test_contracts
 
 clean-via-docker:
 	mkdir -p build
 	docker run --rm -v `pwd`:/code ${BUILDER_DOCKER} bash -c "cd /code && make clean"
 
 dist: clean-via-docker all-via-docker
+
+build/ckb-binary-patcher:
+	cd deps/ckb-binary-patcher && cargo build --release
+patch-test_contracts: build/ckb-binary-patcher
+	mv build/test_contracts build/test_contracts.bak
+	${CKB_BIN_PATCHER} -i build/test_contracts.bak -o build/test_contracts
+patch-generator: build/ckb-binary-patcher
+	mv build/generator build/generator.bak
+	${CKB_BIN_PATCHER} -i build/generator.bak -o build/generator
+patch-generator_log:
+	mv build/generator_log build/generator_log.bak
+	${CKB_BIN_PATCHER} -i build/generator_log.bak -o build/generator_log
+patch-validator:
+	mv build/validator build/validator.bak
+	${CKB_BIN_PATCHER} -i build/validator.bak -o build/validator
+patch-validator_log:
+	mv build/validator_log build/validator_log.bak
+	${CKB_BIN_PATCHER} -i build/validator_log.bak -o build/validator_log
 
 build/generator: c/generator.c $(GENERATOR_DEPS)
 	cd $(SECP_DIR) && (git apply workaround-fix-g++-linking.patch || true) && cd - # apply patch
@@ -152,6 +170,10 @@ build/platform_util.o: deps/mbedtls/library/platform_util.c
 build/bignum.o: deps/mbedtls/library/bignum.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -c -o $@ $<
 
+build/libalt_bn128.a:
+	cd deps/bn/alt_bn128_staticlib && cargo build --release --target riscv64imac-unknown-none-elf
+	cp deps/bn/alt_bn128_staticlib/target/riscv64imac-unknown-none-elf/release/libalt_bn128.a build/
+
 build/sha256.o: deps/crypto-algorithms/sha256.c
 	$(CXX) $(CFLAGS) $(LDFLAGS) -c -o $@ $<
 
@@ -170,9 +192,6 @@ $(SECP256K1_SRC):
 generate-protocol: check-moleculec-version build/blockchain.h build/godwoken.h
 check-moleculec-version:
 	test "$$(${MOLC} --version | awk '{ print $$2 }' | tr -d ' ')" = ${MOLC_VERSION}
-
-build/ckb-binary-patcher:
-	cd deps/ckb-binary-patcher && cargo build --release
 
 build/blockchain.mol:
 	mkdir -p build
