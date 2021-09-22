@@ -24,7 +24,7 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
     
     - name: Install Rust components
-      run: rustup component add rustfmt && rustup component add clippy && rustup target add riscv64imac-unknown-none-elf
+      run: rustup component add rustfmt && rustup component add clippy
     - name: Install moleculec
       run: |
         test "$(moleculec --version)" = "Moleculec 0.6.1" \
