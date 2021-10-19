@@ -34,7 +34,7 @@ CFLAGS_BN128 := -I$(DEPS)/bn128/include
 CFLAGS := -Wall -O2 -I../../c -I../../c/ripemd160 $(CFLAGS_CKB_STD) $(CFLAGS_ETHASH) $(CFLAGS_EVMONE) $(CFLAGS_SMT) $(CFLAGS_GODWOKEN) $(CFLAGS_SECP) $(CFLAGS_MBEDTLS) $(CFLAGS_CRYPTO_ALGORITHMS) $(CFLAGS_INTX) $(CFLAGS_BN128)
 CXXFLAGS := $(CFLAGS) -std=c++1z
 LDFLAGS := -Wl,--gc-sections
-SANITIZER_FLAGS := -g -O1 -fsanitize=address,undefined -Wno-incompatible-pointer-types
+SANITIZER_FLAGS := -g -O3 -fsanitize=address,undefined -Wno-incompatible-pointer-types
 LIMIT_ERROR := -ferror-limit=1
 
 # TODO: read PROTOCOL_VERSION from deps/godwoken-scripts/c/Makefile
