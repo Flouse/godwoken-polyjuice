@@ -52,7 +52,6 @@ VALIDATOR_DEPS := ../../c/validator/secp256k1_helper.h $(BIN_DEPS)
 
 CORPUS_DIR=corpus
 COVERAGE_DIR=coverage
-# TODO:
 COVERAGE_FLAGS=-fprofile-instr-generate -fcoverage-mapping -I ../../c 
 ifeq ($(OS),MacOS)
 	COVERAGE_FLAGS+=-Wl,-U,_LLVMFuzzerCustomMutator -Wl,-U,_LLVMFuzzerInitialize
@@ -70,20 +69,14 @@ build/polyjuice_generator_fuzzer_log: generate-protocol $(GENERATOR_DEPS)
 
 ###
 # TODO:
-show: $(COVERAGE_DIR)/fuzzer.profdata
-	$(LLVM_COV) show --instr-profile=$(COVERAGE_DIR)/fuzzer.profdata smt_coverage
+# show: $(COVERAGE_DIR)/fuzzer.profdata
+# 	$(LLVM_COV) show --instr-profile=$(COVERAGE_DIR)/fuzzer.profdata smt_coverage
 # TODO: report
-report: $(COVERAGE_DIR)/fuzzer.profdata coverage $(EXTERNAL_HEADERS)
-	$(LLVM_COV) report --show-functions --instr-profile=$(COVERAGE_DIR)/fuzzer.profdata smt_coverage $(EXTERNAL_HEADERS)
+# report: $(COVERAGE_DIR)/fuzzer.profdata coverage $(EXTERNAL_HEADERS)
+# 	$(LLVM_COV) report --show-functions --instr-profile=$(COVERAGE_DIR)/fuzzer.profdata smt_coverage $(EXTERNAL_HEADERS)
 # TODO:
-coverage: $(EXTERNAL_HEADERS)
-	clang $(COVERAGE_FLAGS) smt_coverage.c smt_fuzzer.c -o smt_coverage
-
-# start-fuzzer: fuzzer
-# 	./smt_fuzzer -max_len=800000 -workers=$(NPROC) -jobs=$(NPROC) corpus
-
-# start-fuzzer2: fuzzer
-# 	./smt_fuzzer -max_len=800000 corpus
+# coverage: $(EXTERNAL_HEADERS)
+# 	clang $(COVERAGE_FLAGS) smt_coverage.c smt_fuzzer.c -o smt_coverage
 
 clean:
 	rm -rf $(BUILD)/*
