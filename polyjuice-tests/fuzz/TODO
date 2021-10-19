@@ -18,3 +18,34 @@ raw_tx: RawL2Transaction {
   nonce: Uint32(0x00000000), 
   args: Bytes(0xffffff504f4c5903f0550000000000000100000000000000000000000000000000000000000000000000000000000000f100000060806040523480156100115760006000fd5b50610017565b60cc806100256000396000f3fe608060405234801560105760006000fd5b5060043610602c5760003560e01c80636d4ce63c14603257602c565b60006000fd5b6038604c565b604051604391906070565b60405180910390f35b6000600046905080915050605c56505b90566095565b606981608a565b82525b5050565b6000602082019050608360008301846062565b5b92915050565b60008190505b919050565bfea264697066735822122003248c70742339b9c756e8d26fdc7a21fab2a30d7f2ca9a0f79547b2b8a83d4064736f6c63430008020033)
 }
+
+---
+About 4 MB in CKB VM:
++ ~383 KB Bin
++ 1024 KB CKB_SECP256K1_DATA_SIZE
++ 512 KB evmone ExecutionState.evm_memory
++ Optimized evmone analysis.push_values 
++ 32 KB evmone.evm_stack in every depth
++ 24 KB code_data_buffer in every depth
++ evmone code_analysis.instruction vector 
++ ...
+分析得还不完整，可以像你说的再深入 trace 看哪里 crash
+
+polyjuice 是个 C++ 合约，所以用的是我们自己调的 gnu toolchain，
+不受 ckb-std 的 1MB heap 限制
+
+https://github.com/nervosnetwork/riscv-newlib/blob/00c6ae3c481bc62b4ac016b3e86c508cdf2e68d2/libgloss/riscv/sys_sbrk.c#L38-L56 
+值得注意的代码在这里，每个合约编译之后，在它自己的代码结束的位置，都会有个 _end symbol，gnu toolchain 里，分配 heap 时，直接是从这个 _end 开始，到 3MB 这个位置的硬顶（有需要这个硬顶也可以定制）
+
+目前 polyjuice develop TIP 的合约，编译出来大概是 383k，_end 的值为 0x5ff60，连 400K 都没到
+
+所以 stack + heap 全算起来，polyjuice 至少有 3.5MB 的内存空间可以用来分配
+我觉得有需要可以精心规划一下：
+
+1MB secp data
+
+512K stack
+
+2MB 的 heap
+
+其实可以做不少事情
