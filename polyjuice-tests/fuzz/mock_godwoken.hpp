@@ -482,7 +482,7 @@ int init() {
   const uint8_t poly_destructed_key[32] = {5, 0, 0, 0, 255, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   gw_update_raw(poly_destructed_key, zero_nonce);
 
-  print_state();
+  // print_state();
 
   return 0;
 }
