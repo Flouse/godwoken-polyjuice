@@ -1,14 +1,12 @@
+use crate::helper::L2Syscalls;
 use ckb_vm::{
     machine::asm::{AsmCoreMachine, AsmMachine},
-    memory::Memory,
-    registers::{A0, A7},
+    registers::A7,
     DefaultMachineBuilder, Error as VMError, Register, SupportMachine, Syscalls,
 };
 
 const BINARY: &[u8] = include_bytes!("../../../build/test_rlp");
 const DEBUG_PRINT_SYSCALL_NUMBER: u64 = 2177;
-
-pub struct L2Syscalls;
 
 impl<Mac: SupportMachine> Syscalls<Mac> for L2Syscalls {
     fn initialize(&mut self, _machine: &mut Mac) -> Result<(), VMError> {

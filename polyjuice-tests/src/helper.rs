@@ -1,3 +1,4 @@
+use ckb_vm::{registers::A0, Error as VMError, Memory, Register, SupportMachine};
 pub use gw_common::{
     blake2b::new_blake2b,
     builtins::{CKB_SUDT_ACCOUNT_ID, RESERVED_ACCOUNT_ID},
@@ -472,6 +473,34 @@ pub fn setup() -> (Store, DummyState, Generator, u32) {
     .unwrap();
     tx.commit().unwrap();
     (store, state, generator, creator_account_id)
+}
+
+pub struct L2Syscalls {
+    // data: std::collections::HashMap<H256, Bytes>,
+    // tree: std::collections::HashMap<H256, H256>,
+}
+
+impl L2Syscalls {
+    pub(crate) fn output_debug<Mac: SupportMachine>(&self, machine: &mut Mac) -> Result<(), VMError> {
+        let mut addr = machine.registers()[A0].to_u64();
+        let mut buffer = Vec::new();
+
+        loop {
+            let byte = machine
+                .memory_mut()
+                .load8(&Mac::REG::from_u64(addr))?
+                .to_u8();
+            if byte == 0 {
+                break;
+            }
+            buffer.push(byte);
+            addr += 1;
+        }
+
+        let s = String::from_utf8(buffer).map_err(|_| VMError::ParseError)?;
+        println!("[contract debug]: {}", s);
+        Ok(())
+    }
 }
 
 pub fn deploy(
