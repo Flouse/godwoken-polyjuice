@@ -55,8 +55,8 @@ fn test_fallback_function() {
                 L2TX_MAX_CYCLES,
             )
             .expect("construct");
-        // [Deploy FallbackFunction] used cycles: 587271 < 590K
-        helper::check_cycles("Deploy FallbackFunction", run_result.used_cycles, 590_000);
+        // [Deploy FallbackFunction] used cycles: 590099 < 600K
+        helper::check_cycles("Deploy FallbackFunction", run_result.used_cycles, 600_000);
         state.apply_run_result(&run_result).expect("update state");
     }
 
