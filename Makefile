@@ -50,7 +50,7 @@ VALIDATOR_DEPS := c/validator/secp256k1_helper.h $(BIN_DEPS)
 # BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:aae8a3f79705f67d505d1f1d5ddc694a4fd537ed1c7e9622420a470d59ba2ec3
 # docker pull nervos/ckb-riscv-gnu-toolchain:bionic-20190702
 BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain@sha256:7b168b4b109a0f741078a71b7c4dddaf1d283a5244608f7851f5714fbad273ba
-# BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain:bionic-20190702-newlib-debug-symbols
+# TODO: update to BUILDER_DOCKER := nervos/ckb-riscv-gnu-toolchain:bionic-20190702-newlib-debug-symbols
 
 all: build/test_contracts build/test_rlp build/generator build/validator build/generator_log build/validator_log build/test_ripemd160 build/blockchain.h build/godwoken.h build/eth-addr-reg-generator build/eth-addr-reg-validator
 
@@ -61,14 +61,12 @@ log-version-via-docker: generate-protocol
 	mkdir -p build
 	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} bash -c "make build/generator_log && make build/validator_log"
 
-# Be aware that a given prerequisite will only be built once per invocation of make, at most.
-all-in-debug-mode: LDFLAGS := -g
-all-in-debug-mode: $(ALL_OBJS) build/generator_log build/validator_log
-
 all-via-docker-in-debug-mode: generate-protocol
-	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} make all-in-debug-mode
-debug-all: CFLAGS += -DCKB_C_STDLIB_PRINTF -O0
-debug-all: all
+	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} make debug-all
+# Be aware that a given prerequisite will only be built once per invocation of make, at most.
+# all-in-debug-mode: LDFLAGS := -g
+all-in-debug-mode: CFLAGS += -DCKB_C_STDLIB_PRINTF -O0
+all-in-debug-mode: all
 
 clean-via-docker:
 	mkdir -p build
