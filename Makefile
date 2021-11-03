@@ -62,7 +62,7 @@ log-version-via-docker: generate-protocol
 	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} bash -c "make build/generator_log && make build/validator_log"
 
 all-via-docker-in-debug-mode: generate-protocol
-	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} make debug-all
+	docker run --rm -v `pwd`:/code -w /code ${BUILDER_DOCKER} make all-in-debug-mode
 # Be aware that a given prerequisite will only be built once per invocation of make, at most.
 # all-in-debug-mode: LDFLAGS := -g
 all-in-debug-mode: CFLAGS += -DCKB_C_STDLIB_PRINTF -O0
