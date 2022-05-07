@@ -1139,7 +1139,7 @@ int handle_message(gw_context_t* ctx,
    * 2. CALLCODE/DELEGATECALL should skip `handle_transfer`, otherwise
    *    `value transfer` of CALLCODE/DELEGATECALL will be executed twice
    */
-  if (!is_special_call(msg.kind)) {
+  if (ctx->block_info.timestamp < 1651837318000 || !is_special_call(msg.kind)){
     bool to_address_is_eoa = !to_address_exists
                           || (to_address_exists && code_size == 0);
     ret = handle_transfer(ctx, &msg, to_address_is_eoa);
