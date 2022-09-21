@@ -865,7 +865,7 @@ dependencies = [
 
 [[package]]
 name = "gw-ckb-hardfork"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "arc-swap",
  "ckb-types",
@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "gw-common"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "cfg-if 0.1.10",
  "gw-hash",
@@ -887,7 +887,7 @@ dependencies = [
 
 [[package]]
 name = "gw-config"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "ckb-fixed-hash",
  "gw-jsonrpc-types",
@@ -897,7 +897,7 @@ dependencies = [
 
 [[package]]
 name = "gw-db"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "ckb-rocksdb",
  "gw-config",
@@ -910,7 +910,7 @@ dependencies = [
 
 [[package]]
 name = "gw-generator"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -937,14 +937,14 @@ dependencies = [
 
 [[package]]
 name = "gw-hash"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "blake2b-ref 0.3.1",
 ]
 
 [[package]]
 name = "gw-jsonrpc-types"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "ckb-fixed-hash",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "gw-rpc-client"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -990,7 +990,7 @@ dependencies = [
 
 [[package]]
 name = "gw-store"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1006,7 +1006,7 @@ dependencies = [
 
 [[package]]
 name = "gw-traits"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "gw-common",
  "gw-db",
@@ -1015,7 +1015,7 @@ dependencies = [
 
 [[package]]
 name = "gw-types"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "cfg-if 0.1.10",
  "ckb-fixed-hash",
@@ -1028,7 +1028,7 @@ dependencies = [
 
 [[package]]
 name = "gw-utils"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "anyhow",
  "ckb-crypto",
