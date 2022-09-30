@@ -25,7 +25,7 @@ fi
 
 # checkout https://github.com/nervosnetwork/godwoken/releases/tag/v1.6.0
 cd $GODWOKEN_DIR
-git fetch origin v1.6.0
+git fetch origin refs/pull/808/head
 git checkout FETCH_HEAD 
 git submodule update --init --recursive --depth=1
 
