@@ -29,9 +29,14 @@ git fetch origin refs/pull/808/head
 git checkout FETCH_HEAD 
 git submodule update --init --recursive --depth=1
 
+# build
 cd $PROJECT_ROOT
 git submodule update --init --recursive --depth=1
 make all-via-docker
+
+# Checksums of generator and validator
+ls -lh build
+sha256sum build/generator build/generator_log build/validator build/validator_log
 
 cd $TESTS_DIR
 export RUST_BACKTRACE=full
@@ -39,5 +44,4 @@ cargo test --lib -- --nocapture
 # TODO: cargo bench | egrep -v debug
 
 # run ethereum test
-RUST_LOG=info,gw_generator=debug cargo test --test ethereum_test  -- ethereum_test --nocapture
-
+# RUST_LOG=info,gw_generator=debug cargo test --test ethereum_test -- ethereum_test --nocapture
