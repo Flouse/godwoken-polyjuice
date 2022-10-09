@@ -39,7 +39,7 @@ fn test_create2() {
         block_number,
     );
     // [Deploy Create2Impl] used cycles: 819215 < 820K
-    helper::check_cycles("Deploy Create2Impl", run_result.cycles.execution, 1_200_000);
+    helper::check_cycles("Deploy Create2Impl", run_result.cycles, 1_200_000);
     // println!(
     //     "result {}",
     //     serde_json::to_string_pretty(&RunResult::from(run_result)).unwrap()
@@ -98,17 +98,14 @@ fn test_create2() {
                 None,
             )
             .expect("Create2Impl.deploy(uint256 value, bytes32 salt, bytes memory code)");
-        // [Create2Impl.deploy(...)] used cycles: 1197555 < 1230K
-        helper::check_cycles(
-            "Create2Impl.deploy(...)",
-            run_result.cycles.execution,
-            1_750_000,
-        );
+
         state
             .apply_run_result(&run_result.write)
             .expect("update state");
         run_result
     };
+    // [Create2Impl.deploy(...)] used cycles: 1197555 < 1230K
+    helper::check_cycles("Create2Impl.deploy(...)", run_result.cycles, 1_750_000);
 
     let create2_script = compute_create2_script(
         create2_contract_addr.as_slice(),
