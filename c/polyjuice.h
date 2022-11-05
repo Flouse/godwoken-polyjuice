@@ -614,6 +614,8 @@ struct evmc_result call(struct evmc_host_context* context,
   res.release = release_result;
   gw_context_t* gw_ctx = context->gw_ctx;
 
+  /* TODO: Revert in try block has not been implemented. Will fix later.*/
+
   precompiled_contract_gas_fn contract_gas;
   precompiled_contract_fn contract;
   if (match_precompiled_address(&msg->destination, &contract_gas, &contract)) {
@@ -645,9 +647,9 @@ struct evmc_result call(struct evmc_host_context* context,
     if (ret != 0) {
       debug_print_int("call pre-compiled contract failed", ret);
       res.status_code = EVMC_INTERNAL_ERROR;
-      return res;
+    } else {
+      res.status_code = EVMC_SUCCESS;
     }
-    res.status_code = EVMC_SUCCESS;
   } else {
     ret = handle_message(gw_ctx, context->from_id, context->to_id,
                          &context->destination, msg, &res);
@@ -663,6 +665,10 @@ struct evmc_result call(struct evmc_host_context* context,
         res.status_code = EVMC_INTERNAL_ERROR;
       }
     }
+  }
+
+  if (is_evmc_error(res.status_code)) {
+    g_error_code = res.status_code;
   }
   debug_print_int("call.res.status_code", res.status_code);
   ckb_debug("END call");
@@ -1364,6 +1370,9 @@ int handle_message(gw_context_t* ctx,
     if (ret != 0) {
       return ret;
     }
+    if (g_error_code != EVMC_SUCCESS) {
+      res->status_code = (evmc_status_code)g_error_code;
+    }
   } else {
     ckb_debug("[handle_message] Don't run evm and return empty data");
     res->output_data = NULL;
@@ -1629,6 +1638,7 @@ int run_polyjuice() {
   }
 
   /* Godwoken syscall: SET_RETURN_DATA */
+  debug_print_int("set return data size", res.output_size);
   ret = context.sys_set_program_return_data(&context,
                                             (uint8_t *)res.output_data,
                                             res.output_size);
